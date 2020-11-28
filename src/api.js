@@ -1,5 +1,6 @@
 const axios = require('axios')
-
+const config = require('../stuff/config')
+const querystring = require('querystring')
 
 createHeaders = (username , navigationInfo) =>  new Promise((resolve ,reject) => {
         const url = `https://www.instagram.com/${username}/?__a=1`
@@ -104,3 +105,25 @@ module.exports =(accounts , NavInfo , options) => new Promise(async(resolve , re
 
 })
 
+fetchAllPost = (id , end_cursor , has_next_page) => new Promise(async(resolve , reject) => {
+    var posts = []
+    while(has_next_page) {
+        url_variables = { id : id , first : 12 , after : end_cursor}
+        const query_params = {
+            query_hash : config.ig.graphql_query_hash,
+            variables : JSON.stringify(url_variables)
+        }
+        const url = `${config.ig.host + config.ig.path + querystring.stringify(query_params)}`
+
+        var response = await axios.get(url)
+
+        for ( i in data.data.user.edge_owner_to_timeline_media.edges) {
+            posts.push(data.data.user.edge_owner_to_timeline_media.edges[i])
+        }
+
+        has_next_page = response.data.data.user.edge_owner_to_timeline_media.page_info.has_next_page
+        end_cursor = response.data.data.user.edge_owner_to_timeline_media.page_info.has_next_page
+
+    }
+    resolve(results)
+})
