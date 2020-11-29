@@ -14,7 +14,7 @@ config.api.HOST = '127.0.0.1'
 config.api.PORT = 8002
 config.api.PATH = '/save_chunk/'
 
-config.account.user = "dalaipprenti@gmail.com"
-config.account.password = "azzogala69"
+config.account.user = "youwillnotgetmyemail@motherfucker.com"
+config.account.password = ":)"
 
 module.exports = config

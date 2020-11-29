@@ -1,4 +1,4 @@
-module.exports = {
+module.exports = parser = {
     "scrappe" : (data) => new Promise((resolve , reject) => {
         results = {
             id : data.id,
@@ -10,24 +10,35 @@ module.exports = {
             is_bussiness_account : data.is_business_account,
             business_category : data.business_category_name,
             is_verified : data.is_verified,
-            is_joinded_recently : data.is_joined_recently
+            is_joinded_recently : data.is_joined_recently,
+            catergory_enum : data.catergory_enum,
+            has_clips : data.has_clips,
+            has_guides : data.has_guides,
+            has_channel : data.has_channel
         }
         results['post'] = data.edge_owner_to_timeline_media.edges.map((item) => {
             if (item.node.is_video) {
-                console.log('video')
                 return processVideo(item)
             } else {
-                console.log('image')
                 return processImage(item)
             }
         })
         resolve(results)
     }),
     "scrappe-fetchfollowers" : (data) => new Promise((resolve , reject) =>{
-
+        
     }),
-    "scrappe-fetchfollowers" : (data) => new Promise((resolve , reject) => {
-
+    "scrappe-scrappefollowers" : (data) => new Promise((resolve , reject) => {
+        parser.scrappe(data.account).then(async(first_account) => {
+            var accounts = [first_account]
+        
+            followers = await filter_errors(data.followers)
+    
+            for ( i in followers) {
+                accounts.push(await parser.scrappe(followers[i].content))
+            }
+            resolve(accounts)
+        })
     }),
     "getfollowers" : (data) => new Promise((resolve , reject) => {
 
@@ -36,17 +47,21 @@ module.exports = {
 
     })
 }
-
+filter_errors = (lists) => new Promise((resolve, reject) => {
+    new_arr = lists.filter(item => item.status == 'ok')
+    resolve(new_arr)
+})
 processImage = (item) => {
     item = item.node
     post_info = {
             type : 'image',
             id : item.id,
-            like : item.edge_liked_by.count,
-            messsage : item.edge_media_to_caption.edges[0].node.text,
+            like : item.edge_media_preview_like.count,
             comments : item.edge_media_to_comment.count ,
             taken_at : item.taken_at_timestamp,
         }
+        try { post_info.body = item.edge_media_to_caption.edges[0].node.text } 
+        catch(e) { post_info.body = null}
         if (item.location != null) {
             post_info.location = `${item.location.name}&&${item.location.slug}`
         }
@@ -80,11 +95,15 @@ processVideo = (item) => {
     post_info = {
         type : 'video',
         id : item.id,
-        likes_count : item.edge_liked_by.count,
-        messsage : item.edge_media_to_caption.edges[0].node.text,
+        likes_count : item.edge_media_preview_like.count,
         comments_counts : item.edge_media_to_comment.count ,
         taken_at : item.taken_at_timestamp,
     }
+
+    try { post_info.body = item.edge_media_to_caption.edges[0].node.text } 
+    catch(e) { post_info.body = null}
+
+
     if (item.location != null) {
         post_info.location = `${item.location.name}&&${item.location.slug}`
     }

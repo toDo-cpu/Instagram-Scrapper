@@ -1,5 +1,5 @@
 const login = require('./src/login')
-const getDataFromApi= require('./src/api')
+const api = require('./src/api')
 const fetchUserId = require('./src/fetchUserId')
 const fetchFollowers = require('./src/fetchFollowers')
 const postToApi = require('./src/postToApi')
@@ -114,18 +114,19 @@ const temp = require('./src/saveLogin');
         var data = {}
         switch(options.actions) {
             case 'scrappe' : 
-                data = await getDataFromApi(options.target , navigationInfo , options)
+                data = await api.single_query(options.target , navigationInfo , options)
                 break
             case 'scrappe-fetchfollowers' : 
                 data = {
-                    account : await getDataFromApi(options.target , navigationInfo , options),
+                    account : await api.single_query(options.target , navigationInfo , options),
                     followers : await fetchFollowers(userId , navigationInfo , 10 , options)
                 }
                 break
             case 'scrappe-scrappefollowers' : 
-                data['account'] = await getDataFromApi(options.target , navigationInfo , options)
-                usernameFollowersList = await fetchFollowers(userId , navigationInfo , 10 , options)
-                data['followers'] = await getDataFromApi(usernameFollowersList , navigationInfo , options)
+                data['account'] = await api.single_query(options.target , navigationInfo , options)
+                followersList = await fetchFollowers(userId , navigationInfo , 10 , options)
+                followersUsername = await Promise.all(followersList.map((item) => new Promise((resolve , reject) => { resolve(item.username)})))
+                data['followers'] = await api.multi_query(followersUsername , navigationInfo , options)
                 break
             case 'getfollowers' :
                 data['accounts'] = options.target
@@ -134,7 +135,8 @@ const temp = require('./src/saveLogin');
             case 'getFollowers-scrappe' : 
                 data['accounts'] = options.target
                 usernameFollowersList = await fetchFollowers(userId , navigationInfo , 10 , options)
-                data['followers'] = await getDataFromApi(usernameFollowersList , navigationInfo , options)
+                followersUsername = await Promise.all(followersList.map((item) => new Promise((resolve , reject) => { resolve(item.username)})))
+                data['followers'] = await api.multi_query(followersUsername , navigationInfo , options)
                 break
             }
 
