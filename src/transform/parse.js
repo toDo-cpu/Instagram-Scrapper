@@ -17,16 +17,20 @@ module.exports = parser = {
             has_channel : data.has_channel
         }
         results['post'] = data.edge_owner_to_timeline_media.edges.map((item) => {
-            if (item.node.is_video) {
-                return processVideo(item)
-            } else {
-                return processImage(item)
+            if (item !=null ) {
+                if (item.node.is_video) {
+                    return processVideo(item)
+                } else {
+                    return processImage(item)
+                }
             }
         })
         resolve(results)
     }),
-    "scrappe-fetchfollowers" : (data) => new Promise((resolve , reject) =>{
-        
+    "scrappe-getfollowers" : (data) => new Promise((resolve , reject) =>{
+        parser.scrappe(data.account).then(first_account => {
+            resolve({ account: first_account , followers : data.followers})
+        })
     }),
     "scrappe-scrappefollowers" : (data) => new Promise((resolve , reject) => {
         parser.scrappe(data.account).then(async(first_account) => {
@@ -41,10 +45,10 @@ module.exports = parser = {
         })
     }),
     "getfollowers" : (data) => new Promise((resolve , reject) => {
-
+        resolve(data)
     }),
-    "getFollowers-scrappe" : (data) => new Promise((resolve , reject) => {
-
+    "getfollowers-scrappe" : (data) => new Promise((resolve , reject) => {
+        
     })
 }
 filter_errors = (lists) => new Promise((resolve, reject) => {

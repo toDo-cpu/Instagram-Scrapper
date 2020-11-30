@@ -6,15 +6,17 @@ const child_process = require('child_process')
 
 module.exports = (id , navigationInfo , chunk , options) => new Promise(async(resolve , reject) => {  
     if (options.v) {
-        console.log(`[LAZARE] Scrappe followers of ${options.target}`)
+        console.log(`\x1b[35m[LAZARE] Scrappe followers of ${options.target}\x1b[0m`)
     }
     if (options.hasOwnProperty('break')) {
         var compteur = 1
         var accountFollowers = []
-        var {followers , has_next_page , end_cursor , uid } = await fetchFollowers(id , navigationInfo , chunk)
+        var number_of_followers_obtained = 0
+        var {followers , has_next_page , end_cursor , uid , total_followers} = await fetchFollowers(id , navigationInfo , chunk)
+        number_of_followers_obtained = number_of_followers_obtained +  followers.length
         accountFollowers.push(followers)
         if (options.v) {
-            console.log(`\x1b[32m[LAZARE] New followers chunk uid : ${uid} | size : ${followers.length}\x1b[0m`)
+            console.log(`\x1b[32m[LAZARE][${options.target}] ${followers.length} | total : ${number_of_followers_obtained}/${total_followers}\x1b[0m`)
         }
         if (options && options.hasOwnProperty('post_chunk') && options.post_chunk == true) {
             post_chunk(followers , uid , options)
@@ -26,10 +28,11 @@ module.exports = (id , navigationInfo , chunk , options) => new Promise(async(re
             } else {
                 await sleep(500)
             }
-            var {followers , has_next_page , end_cursor , uid , totalFollowers} = await fetchFollowers(id , navigationInfo , chunk , end_cursor)
+            var {followers , has_next_page , end_cursor , uid , total_followers} = await fetchFollowers(id , navigationInfo , chunk , end_cursor)
+            number_of_followers_obtained = number_of_followers_obtained +  followers.length
             accountFollowers.push(followers)
             if (options.v) {
-                console.log(`\x1b[32m[LAZARE] New followers chunk uid : ${uid} | size : ${followers.length}\x1b[0m`)
+                console.log(`\x1b[32m[LAZARE][${options.target}] ${followers.length} | total : ${number_of_followers_obtained}/${total_followers}\x1b[0m`)
             }
             if (options && options.hasOwnProperty('post_chunk') && options.post_chunk == true) {
                 post_chunk(followers , uid , options)
@@ -52,7 +55,7 @@ module.exports = (id , navigationInfo , chunk , options) => new Promise(async(re
         var {followers , has_next_page , end_cursor , uid } = await fetchFollowers(id , navigationInfo , chunk)
         accountFollowers.push(followers)
         if (options.v) {
-            console.log(`\x1b[32m[LAZARE] New followers chunk uid : ${uid} | size : ${followers.length}\x1b[0m`)
+            console.log(`\x1b[32m[LAZARE][${options.target}] ${followers.length} | total : ${number_of_followers_obtained}/${total_followers}\x1b[0m`)
         }
         if (options && options.hasOwnProperty('post_chunk') && options.post_chunk == true) {
             post_chunk(followers , uid , options)
@@ -65,7 +68,7 @@ module.exports = (id , navigationInfo , chunk , options) => new Promise(async(re
             }
             var {followers , has_next_page , end_cursor , uid , totalFollowers} = await fetchFollowers(id , navigationInfo , chunk , end_cursor)
             if (options.v) {
-                console.log(`\x1b[32m[LAZARE] New followers chunk uid : ${uid} | size : ${followers.length}\x1b[0m`)
+                console.log(`\x1b[32m[LAZARE][${options.target}] ${followers.length} | total : ${number_of_followers_obtained}/${total_followers}\x1b[0m`)
             }
             if (options && options.hasOwnProperty('post_chunk') && options.post_chunk == true) {
                 post_chunk(followers , uid , options)
@@ -82,8 +85,8 @@ var fetchFollowers = (id , navigationInfo , chunk , end_cursor=null) => new Prom
 
     axios({ url : url , method : 'get', headers : headers})
     .then((results) => {
-        var {followers , has_next_page , end_cursor , uid , totalFollowers} = processResult(results.data)
-        resolve({followers , has_next_page , end_cursor , uid , totalFollowers})
+        var {followers , has_next_page , end_cursor , uid, total_followers} = processResult(results.data)
+        resolve({followers , has_next_page , end_cursor , uid , total_followers})
     })
     .catch((e) => {
         reject(e)
@@ -116,7 +119,7 @@ function processResult(data) {
     var accountFollowers = data.data.user.edge_followed_by.edges,
           end_cursor = data.data.user.edge_followed_by.page_info.end_cursor,
           has_next_page = data.data.user.edge_followed_by.page_info.has_next_page,
-          totalFollowers = data.data.user.edge_followed_by.count
+          total_followers = data.data.user.edge_followed_by.count
     var followers = []
     for ( i in accountFollowers) {
         followers.push({ 
@@ -126,7 +129,7 @@ function processResult(data) {
         })
     }
     var uid = crypto.randomBytes(5).toString('hex')
-    return{ followers , has_next_page , end_cursor , uid , totalFollowers }
+    return{ followers , has_next_page , end_cursor , uid , total_followers}
 }
 post_chunk = (chunk , uid , options) => {
     var process = child_process.fork('./workers/post_chunk.js')

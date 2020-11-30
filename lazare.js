@@ -116,7 +116,7 @@ const temp = require('./src/saveLogin');
             case 'scrappe' : 
                 data = await api.single_query(options.target , navigationInfo , options)
                 break
-            case 'scrappe-fetchfollowers' : 
+            case 'scrappe-getfollowers' : 
                 data = {
                     account : await api.single_query(options.target , navigationInfo , options),
                     followers : await fetchFollowers(userId , navigationInfo , 10 , options)
@@ -132,10 +132,10 @@ const temp = require('./src/saveLogin');
                 data['accounts'] = options.target
                 data['followers'] = await fetchFollowers(userId , navigationInfo , 10 , options)
                 break
-            case 'getFollowers-scrappe' : 
+            case 'getfollowers-scrappe' : 
                 data['accounts'] = options.target
-                usernameFollowersList = await fetchFollowers(userId , navigationInfo , 10 , options)
-                followersUsername = await Promise.all(followersList.map((item) => new Promise((resolve , reject) => { resolve(item.username)})))
+                FollowersList = await fetchFollowers(userId , navigationInfo , 10 , options)
+                followersUsername = await Promise.all(FollowersList.map((item) => new Promise((resolve , reject) => { resolve(item.username)})))
                 data['followers'] = await api.multi_query(followersUsername , navigationInfo , options)
                 break
             }

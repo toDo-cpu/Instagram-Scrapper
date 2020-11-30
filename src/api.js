@@ -2,7 +2,7 @@ const axios = require('axios')
 const config = require('../stuff/config')
 const querystring = require('querystring')
 
-createHeaders = (username , navigationInfo) =>  new Promise((resolve ,reject) => {
+createHeaders = (username , navigationInfo ) =>  new Promise((resolve ,reject) => {
         const url = `https://www.instagram.com/${username}/?__a=1`
         const headers = {}
         for ( i in navigationInfo.headers) {
@@ -23,14 +23,16 @@ get = (headers , url) => new Promise((resolve , reject ) => {
         reject(e)
     })
 })
-fetchAllPost = (id , end_cursor , has_next_page , options , username) => new Promise(async(resolve , reject) => {
+fetchAllPost = (id , end_cursor , has_next_page , options , username , NavInfo , total_count) => new Promise(async(resolve , reject) => {
     if (options.hasOwnProperty('break')) {
         var compteur = 1
     }
-    if (options.v) {
-        console.log(`\x1b[35m[LAZARE] Scrappe the nexts posts off ${username}\x1b[0m`)
+    if (options.v && has_next_page == true) {
+        console.log(`\x1b[32m[LAZARE] ${username} | posts_count ${total_count}\x1b[0m`)
     }
+    var number_of_posts = 0
     var posts = []
+    var errors = []
     while(has_next_page) {
         if (options.hasOwnProperty('slowmode')) {
             await sleep(options.slowmode)
@@ -43,19 +45,41 @@ fetchAllPost = (id , end_cursor , has_next_page , options , username) => new Pro
         }
         const url = `${config.ig.host + config.ig.path + querystring.stringify(query_params)}`
 
+        const headers = {}
+        for ( i in NavInfo.headers) {
+            headers[i] = NavInfo.headers[i]
+        }
+        headers['Cookie'] = NavInfo.cookies.join(';')
+        headers['User-agent'] = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:82.0) Gecko/20100101 Firefox/82.0"
+
         try {
-            var response = await axios.get(url)
+            var response = await axios.get(url , headers)
+            if (response.data.status != 'ok' || response.data.data.user.edge_owner_to_timeline_media.edges.length == 0) {
+                console.log(`\x1b[31m[LAZARE][${username}] Can't retrieve others posts \x1b[0m`)
+                throw new Error(JSON.stringify({ type : 'reponse' , url : url , headers : headers , content : response.data}))
+            }
             for ( i in response.data.data.user.edge_owner_to_timeline_media.edges) {
                 posts.push(response.data.data.user.edge_owner_to_timeline_media.edges[i])
             }
+            new_posts_length = response.data.data.user.edge_owner_to_timeline_media.edges.length
+            number_of_posts+=new_posts_length
             if (options.v) {
-                console.log(`\x1b[35m[LAZARE] ${response.data.data.user.edge_owner_to_timeline_media.edges.length} another posts have been recovered\x1b[0m`)
+                console.log(`\x1b[32m[LAZARE][${username}] ${number_of_posts}/${total_count} posts\x1b[0m`)
             }
             has_next_page =  response.data.data.user.edge_owner_to_timeline_media.page_info.has_next_page
             end_cursor = response.data.data.user.edge_owner_to_timeline_media.page_info.end_cursor
         } catch(e) {
-            console.log(`\x1b[31m[LAZARE] Can't retrieve chunk can't continue\x1b[0m`)
-            reject(e)
+            try  {
+                e = JSON.parse(e.message)
+            } catch (e) {}
+            
+            if (e.hasOwnProperty('type')) {
+                errors.push(e)
+            } else {
+                console.log(`\x1b[31m[LAZARE][${username}] Can't query api \x1b[0m`)
+                errors.push({type : 'request' , url : url , headers : headers , content : e})
+            }
+            has_next_page = false
         }
         if (options.hasOwnProperty('break')) {
             if (compteur == options.break.eachXRequest) {
@@ -63,13 +87,13 @@ fetchAllPost = (id , end_cursor , has_next_page , options , username) => new Pro
                     console.log(`\x1b[33m[LAZARE] Taking a break a ${options.break.time}ms\x1b[0m`)
                 }
                 await sleep(options.break.time)
-                comtpeur = 1
+                compteur = 1
             } else {
                 compteur++
             }
         }
     }
-    resolve(posts)
+    resolve({posts , errors})
 })
 module.exports = api = {
     multi_query : (username_list , NavInfo , options) => new Promise(async(resolve , reject ) => {
@@ -77,9 +101,6 @@ module.exports = api = {
             var compteur = 1
             var results = []
             for (  i in username_list) {
-                if (options.v) {
-                    console.log(`\x1b[35m[LAZARE] Start scrappe for ${username_list[i]}\x1b[0m`)
-                }
                 if (options.hasOwnProperty('slowmode')) {
                     await sleep(options.slowmode)
                 }
@@ -110,38 +131,34 @@ module.exports = api = {
                     data = await api.single_query(username_list[i], NavInfo , options)
                     results.push({ status : 'ok' , content : data})
                 } catch(e) {
-                    if (options.v) {
-                        console.log(`\x1b[31m[LAZARE] an error occurred during the scrapping of ${username_list[i]}\n${e}\x1b[0m`)
-                    }
                     results.push({status : 'fail' , content : e})
                 }
             }
             resolve(results)
         }
     }),
-    single_query : (accounts , NavInfo , options) => new Promise(async(resolve,reject) => {
-        var { headers , url} = await createHeaders(accounts, NavInfo)
+    single_query : (account , NavInfo , options) => new Promise(async(resolve,reject) => {
+        var { headers , url} = await createHeaders(account, NavInfo)
         try {
             data = await get(headers , url)
             if (options.v) {
-                console.log(`[LAZARE] ${accounts} info has been scrappe`)
+                console.log(`\x1b[32m[LAZARE] ${account} scrapped\x1b[0m`)
             }
             if (data.edge_owner_to_timeline_media.page_info.has_next_page) {
 
                 var firsts_posts = data.edge_owner_to_timeline_media.edges
                 var page_info = data.edge_owner_to_timeline_media.page_info
+                var total_post_counts = data.edge_owner_to_timeline_media.count
+                var {new_posts , errors} = await fetchAllPost(data.id , page_info.end_cursor , page_info.has_next_page , options , account , NavInfo , total_post_counts)
 
-                var new_posts = await fetchAllPost(data.id , page_info.end_cursor , page_info.has_next_page , options , accounts )
                 data.edge_owner_to_timeline_media.edges = firsts_posts.concat(new_posts)
+                data.edge_owner_to_timeline_media.errors = errors
 
-            }
-            if ( options.v) {
-                console.log(`\x1b[35m[LAZARE] ${accounts} scrapped\x1b[0m`)
             }
             resolve(data)
         } catch(e) {
             if (options.v) {
-                console.log(`\x1b[31m[LAZARE] ${accounts} was not scrapped\x1b[0m`)
+                console.log(`\x1b[31m[LAZARE][${account}] was not scrapped\x1b[0m`)
             }
             reject(e)
         }
