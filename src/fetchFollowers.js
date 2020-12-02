@@ -53,7 +53,7 @@ module.exports = (id , navigationInfo , chunk , options) => new Promise(async(re
     } else {
         var accountFollowers = []
         var number_of_followers_obtained = 0
-        let {followers , has_next_page , end_cursor , uid , total_followers} = await fetchFollowers(id , navigationInfo , chunk)
+        var {followers , has_next_page , end_cursor , uid , total_followers} = await fetchFollowers(id , navigationInfo , chunk)
         number_of_followers_obtained = number_of_followers_obtained +  followers.length
         accountFollowers.push(followers)
         if (options.v) {

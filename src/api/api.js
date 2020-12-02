@@ -1,7 +1,7 @@
 const sleep = require('./sleep')
 const get = require('./get')
-const fetchAllPost = require('./fetchAllPost')
-
+const fetchAllPost = require('./fetchAllPost/fetchAllPost')
+const createHeaders = require('./createHeaders')
 module.exports = api = {
     multi_query : (username_list , NavInfo , options) => new Promise(async(resolve , reject ) => {
         if (options.hasOwnProperty('break')) {
@@ -64,8 +64,9 @@ module.exports = api = {
             }
             resolve(data)
         } catch(e) {
+            //console.log(e)
             if (options.v) {
-                console.log(`\x1b[LAZARE][SCRAPPE][${account}] profile wasn't scrapped\x1b[0m`)
+                console.log(`\x1b[31m[LAZARE][SCRAPPE][${account}] profile wasn't scrapped\x1b[0m`)
             }
             reject(e)
         }
