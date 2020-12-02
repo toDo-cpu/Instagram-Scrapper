@@ -52,7 +52,9 @@ module.exports = (id , navigationInfo , chunk , options) => new Promise(async(re
         resolve(accountFollowers)
     } else {
         var accountFollowers = []
-        var {followers , has_next_page , end_cursor , uid } = await fetchFollowers(id , navigationInfo , chunk)
+        var number_of_followers_obtained = 0
+        let {followers , has_next_page , end_cursor , uid , total_followers} = await fetchFollowers(id , navigationInfo , chunk)
+        number_of_followers_obtained = number_of_followers_obtained +  followers.length
         accountFollowers.push(followers)
         if (options.v) {
             console.log(`\x1b[32m[LAZARE][${options.target}] ${followers.length} | total : ${number_of_followers_obtained}/${total_followers}\x1b[0m`)
@@ -62,18 +64,19 @@ module.exports = (id , navigationInfo , chunk , options) => new Promise(async(re
         }
         while(has_next_page) {
             if (options.hasOwnProperty('slowmode')) {
-                sleep(options.slowmode)
+                await sleep(options.slowmode)
             } else {
-                sleep(500)
+                await sleep(500)
             }
-            var {followers , has_next_page , end_cursor , uid , totalFollowers} = await fetchFollowers(id , navigationInfo , chunk , end_cursor)
+            var {followers , has_next_page , end_cursor , uid , total_followers} = await fetchFollowers(id , navigationInfo , chunk , end_cursor)
+            number_of_followers_obtained = number_of_followers_obtained +  followers.length
+            accountFollowers.push(followers)
             if (options.v) {
                 console.log(`\x1b[32m[LAZARE][${options.target}] ${followers.length} | total : ${number_of_followers_obtained}/${total_followers}\x1b[0m`)
             }
             if (options && options.hasOwnProperty('post_chunk') && options.post_chunk == true) {
                 post_chunk(followers , uid , options)
-            }
-            accountFollowers.push(followers)
+            }            
         }   
         accountFollowers = await convert2Dto1D(accountFollowers)
         resolve(accountFollowers)

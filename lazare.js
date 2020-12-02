@@ -1,5 +1,5 @@
 const login = require('./src/login')
-const api = require('./src/api')
+const api = require('./src/api/api')
 const fetchUserId = require('./src/fetchUserId')
 const fetchFollowers = require('./src/fetchFollowers')
 const postToApi = require('./src/postToApi')
@@ -139,7 +139,6 @@ const temp = require('./src/saveLogin');
                 data['followers'] = await api.multi_query(followersUsername , navigationInfo , options)
                 break
             }
-
         if (options['post-api'] == 'true') {
             try {
                 await postToApi(config.api , options , {content : data , type : options.actions})
