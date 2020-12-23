@@ -22,7 +22,7 @@ var createHeaders = (end_cursor , NavInfo , id) => new Promise((resolve , reject
 
 })
 
-module.exports = fetchAllPost = (id , end_cursor , has_next_page , options , username , NavInfo , total_count) => new Promise(async(resolve , reject) => {
+module.exports = (id , end_cursor , has_next_page , options , username , NavInfo , total_count) => new Promise(async(resolve , reject) => {
     if (options.hasOwnProperty('break')) {
         var compteur = 1
     }
@@ -60,7 +60,7 @@ module.exports = fetchAllPost = (id , end_cursor , has_next_page , options , use
         } catch(e) {
             try  {
                 e = JSON.parse(e.message)
-            } catch (e) {}
+            } catch (err) {}
             
             if (e.hasOwnProperty('type')) {
                 errors.push(e)

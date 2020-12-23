@@ -1,11 +1,10 @@
 const fs = require('fs')
 
-
 module.exports = {
     get : () => new Promise((resolve , reject) => {
         info = fs.readFileSync('./stuff/NavigationSave.json')
         if (info == undefined || info == '') {
-            reject()
+            reject("You have no session saved")
         }
         resolve(JSON.parse(info))
     }),

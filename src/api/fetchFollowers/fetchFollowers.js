@@ -1,6 +1,6 @@
 const axios = require('axios')
 const querystring = require('querystring')
-const config = require('../stuff/config')
+const config = require('../../../stuff/config')
 const crypto = require('crypto')
 const child_process = require('child_process')
 
@@ -18,7 +18,7 @@ module.exports = (id , navigationInfo , chunk , options) => new Promise(async(re
         if (options.v) {
             console.log(`\x1b[32m[LAZARE][${options.target}] ${followers.length} | total : ${number_of_followers_obtained}/${total_followers}\x1b[0m`)
         }
-        if (options && options.hasOwnProperty('post_chunk') && options.post_chunk == true) {
+        if (options.hasOwnProperty('post_chunk') && options.post_chunk == true) {
             post_chunk(followers , uid , options)
         }
         compteur++

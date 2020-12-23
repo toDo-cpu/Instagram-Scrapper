@@ -1,74 +1,85 @@
-const sleep = require('./sleep')
-const get = require('./get')
-const fetchAllPost = require('./fetchAllPost/fetchAllPost')
-const createHeaders = require('./createHeaders')
-module.exports = api = {
-    multi_query : (username_list , NavInfo , options) => new Promise(async(resolve , reject ) => {
-        if (options.hasOwnProperty('break')) {
-            var compteur = 1
-            var results = []
-            for (  i in username_list) {
-                if (options.hasOwnProperty('slowmode')) {
-                    await sleep(options.slowmode)
-                }
-                try {
-                    data = await api.single_query(username_list[i], NavInfo , options)
-                    results.push({ status : 'ok' , content : data})
-                } catch(e) {
-                    results.push({status : 'fail' , content : e})
-                }
-                if (compteur == options.break.eachXRequest) {
-                    if (options.v) {
-                        console.log(`\x1b[33m[LAZARE] Taking a break a ${options.break.time}ms \x1b[0m`)
-                    }
-                    await sleep(options.break.time)
-                    compteur = 1
-                } else {
-                    compteur++
-                }
-            }
-            resolve(results)
+const AccountManager = require('./primary/login')
+const fetch = {
+    Followers : require('./fetchFollowers/fetchFollowers'),
+    Post : require('./fetchAllPost/fetchAllPost'),
+    Profile : require('./fetchProfile/query')
+}
+class Collector {
+    constructor(targets , options ) {
+        if (Array.isArray(targets)) {
+            this.targets = {}
+            this.targets.type = "array" 
         } else {
-            var results = []
-            for ( i in username_list) {
-                if (options.hasOwnProperty('slowmode')) {
-                    await sleep(options.slowmode)
-                }
-                try {
-                    data = await api.single_query(username_list[i], NavInfo , options)
-                    results.push({ status : 'ok' , content : data})
-                } catch(e) {
-                    results.push({status : 'fail' , content : e})
-                }
-            }
-            resolve(results)
+            this.targets = {}
+            this.targets.type = "unique"
         }
-    }),
-    single_query : (account , NavInfo , options) => new Promise(async(resolve,reject) => {
-        var { headers , url} = await createHeaders(account, NavInfo)
-        try {
-            data = await get(headers , url)
-            if (options.v) {
-                console.log(`\x1b[32m[LAZARE][SCRAPPE][${account}] profile scrapped\x1b[0m`)
-            }
-            if (data.edge_owner_to_timeline_media.page_info.has_next_page) {
+        this.targets.content = targets
+        this.options = options
+        this.targets.results = {
+            profile : null,
+            posts : null ,
+        }
+        this.targets.id = null
+        this.navInfo = null
+        if (this.targets.type == "array" && options.v) {
+            console.log(`Collector initialized with 3 targets`)
+        } else {
+            console.log(`Collector initialized with 1 target`)
+        }
+    }
+    Login = (login_detail = null) => new Promise(async(resolve, reject) => {
+        this.navInfo = await AccountManager(this.options , login_detail)
+        resolve()
+    })
+    Profile = (username=null) => new Promise(async(resolve , reject) => {
+        if (username != null) {
+                var data = await fetch.Profile.single_query(username , this.navInfo , this.options)
+        } else {
+            if (this.targets.type == "array") {
+                var data = await fetch.Profile.multi_query(this.targets.content, this.navInfo , this.options)
+            } else {
+                var data = await fetch.Profile.single_query(this.targets.content , this.navInfo , this.options)
+            }  
+        }
+        this.targets.results.profile = data
+        resolve(data)
+    })
+    Posts = (targets = null) => new Promise(async(resolve , reject) => {
+        const checkValidity = (item) => {
+            return (item.status == "ok" && item.content.edge_owner_to_timeline_media.page_info.has_next_page == true)
+        }
+        if (targets != null) {
+            collector.Profile(targets).then(async(profile) => {
+                var media = profile.edge_owner_to_timeline_media
+                var new_medias = await fetch.Post(profile.id , media.page_info.end_cursor , true , this.options , profile.username , this.navInfo , media.count)
+                profile.edge_owner_to_timeline_media.edges.concat(new_medias.posts)
+                
+                resolve(profile)
+            })
 
-                var firsts_posts = data.edge_owner_to_timeline_media.edges
-                var page_info = data.edge_owner_to_timeline_media.page_info
-                var total_post_counts = data.edge_owner_to_timeline_media.count
-                var {new_posts , errors} = await fetchAllPost(data.id , page_info.end_cursor , page_info.has_next_page , options , account , NavInfo , total_post_counts)
-
-                data.edge_owner_to_timeline_media.edges = firsts_posts.concat(new_posts)
-                data.edge_owner_to_timeline_media.errors = errors
-
-            }
-            resolve(data)
-        } catch(e) {
-            //console.log(e)
-            if (options.v) {
-                console.log(`\x1b[31m[LAZARE][SCRAPPE][${account}] profile wasn't scrapped\x1b[0m`)
-            }
-            reject(e)
+        } else {
+            var potential_targets = this.targets.results.profile
+            var prs = Promise.all(potential_targets.filter(checkValidity))
+            prs.then(async(results) =>{
+    
+                for ( i in results) {
+                    var id = i
+                    var media = results[i].content.edge_owner_to_timeline_media
+                    var new_medias = await fetch.Post(results[id].content.id , media.page_info.end_cursor , true , this.options , results[i].content.username , this.navInfo , media.count)
+                    results[id].content.edge_owner_to_timeline_media.edges.concat(new_medias.posts)
+                }
+                resolve(results)
+            })
         }
     })
 }
+
+const targets = ['hugo.lharidon' ,'evaaaa014','nel0064','8978411aasff']
+
+var collector = new Collector(targets, { v : true , login : false , slowmode : 1000 , break : { time : 2000 , eachXRequest : 5}})
+
+collector.Login().then(() => {
+    collector.Posts('nel0064').then(profile => {
+        console.log(profile)
+    })
+})

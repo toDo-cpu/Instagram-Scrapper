@@ -13,8 +13,12 @@ const temp = require('./src/saveLogin');
         options = {}
         var args = await getArgs()
         //Parse args
-        if (args.hasOwnProperty('post-api')) {
-            options['post-api'] = args['post-api']
+        console.log(args)
+        if (args.hasOwnProperty('depth')) {
+            options['depth'] = args.depth
+        }
+        if (args.hasOwnProperty('post_chunk') && (args['post_chunk'] == 'true' || args['post_chunk'] == 'True')) {
+            options['post_chunk'] = true
         }
         if (args.hasOwnProperty('name')) {
             options.name = args.name
@@ -112,6 +116,7 @@ const temp = require('./src/saveLogin');
 
         */
         var data = {}
+        console.log(options)
         switch(options.actions) {
             case 'scrappe' : 
                 data = await api.single_query(options.target , navigationInfo , options)

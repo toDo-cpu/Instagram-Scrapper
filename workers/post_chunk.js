@@ -1,8 +1,8 @@
 const axios = require('axios')
 const config = require('../stuff/config').api
 function post_chunk( chunk , config , callback) {
-
-    axios.post(config.HOST+ ':' + config.PORT + config.PATH , chunk)
+    let url = `${config.PROTOCOL}://${config.HOST}:${config.PORT + config.PATH}`
+    axios.post(url , chunk)
         .then((results) => {
             if (results.status == 200)
             callback(`[LAZARE] Chunk posted uid : ${chunk.uid}`)
