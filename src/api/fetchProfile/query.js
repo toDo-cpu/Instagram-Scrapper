@@ -18,7 +18,7 @@ module.exports = query = {
                 }
                 if (compteur == options.break.eachXRequest) {
                     if (options.v) {
-                        console.log(`\x1b[33m[LAZARE] Taking a break a ${options.break.time}ms \x1b[0m`)
+                        console.log(`Taking a break a ${options.break.time}ms`)
                     }
                     await sleep(options.break.time)
                     compteur = 1
@@ -50,13 +50,13 @@ module.exports = query = {
             data = data.graphql.user
 
             if (options.v) {
-                console.log(`\x1b[32m[LAZARE][SCRAPPE][${account}] profile scrapped\x1b[0m`)
+                console.log(`[${account}] profile scrapped`)
             }
             
             resolve(data)
         } catch(e) {
             if (options.v) {
-                console.log(`\x1b[31m[LAZARE][SCRAPPE][${account}] profile wasn't scrapped fully\x1b[0m`)
+                console.log(`[${account}] profile wasn't scrapped fully`)
             }
             reject(e)
         } 
