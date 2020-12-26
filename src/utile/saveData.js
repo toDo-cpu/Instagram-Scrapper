@@ -1,5 +1,4 @@
 const fs = require('fs/promises')
-
 module.exports = (options , data) => new Promise(async(resolve , reject) => {
     try {   
         if ( options.hasOwnProperty('name')) {

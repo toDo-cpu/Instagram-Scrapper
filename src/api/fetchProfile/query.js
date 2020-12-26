@@ -1,6 +1,6 @@
 const sleep = require('../primary/sleep')
 const axios = require('axios')
-
+const log = require('../primary/logMessage')
 module.exports = query = {
     multi_query : (username_list , NavInfo , options , scrapping_opt) => new Promise(async(resolve , reject ) => {
         if (options.hasOwnProperty('break')) {
@@ -18,7 +18,7 @@ module.exports = query = {
                 }
                 if (compteur == options.break.eachXRequest) {
                     if (options.v) {
-                        console.log(`Taking a break a ${options.break.time}ms`)
+                        log(`Taking a break a ${options.break.time}ms` , 'pause' , 'profile')
                     }
                     await sleep(options.break.time)
                     compteur = 1
@@ -50,13 +50,13 @@ module.exports = query = {
             data = data.graphql.user
 
             if (options.v) {
-                console.log(`[${account}] profile scrapped`)
+                log(`${account} profile scrapped`,'info','profile')
             }
             
             resolve(data)
         } catch(e) {
             if (options.v) {
-                console.log(`[${account}] profile wasn't scrapped fully`)
+                log(`${account} profile wasn't scrapped`,'error','profile',e)
             }
             reject(e)
         } 

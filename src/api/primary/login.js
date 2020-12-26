@@ -1,5 +1,6 @@
 const pup = require('puppeteer-core')
 const temp = require('./saveLogin')
+const log = require('../primary/logMessage')
 module.exports = (options ,login_detail=null ) => new Promise(async(resolve , reject)=>{
 
     if (options.hasOwnProperty('login') && options.login == true) {
@@ -7,12 +8,11 @@ module.exports = (options ,login_detail=null ) => new Promise(async(resolve , re
         temp.save(navigationInfo)
         .then(() => { 
             if (options.v) { 
-            console.log(`\x1b[32m[LAZARE] browsing information saved\x1b[0m`)
+            log(`browsing information saved` , 'info' , 'log manager')
         }
         resolve(navigationInfo)
         }).catch((e) => {
-            console.log(`[LAZARE] Cannot save browsing information`)
-            console.log(navigationInfo)
+            log(`Cannot save browsing informations` , 'error' , 'log manager', e)
             reject(e)
         })
     } else {
@@ -20,6 +20,7 @@ module.exports = (options ,login_detail=null ) => new Promise(async(resolve , re
             var navigationInfo = await temp.get()
             resolve(navigationInfo)
         }catch(e) {
+            log(`Cannot get browsing informations` , `error` , 'log manager', e)
             reject(e)
         }
     }

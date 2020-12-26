@@ -2,9 +2,10 @@ const config = require('../../../stuff/config')
 const sleep = require('../primary/sleep')
 const querystring  = require('querystring')
 const axios = require('axios')
-
+const log = require('../primary/logMessage')
 module.exports = (id , NavInfo , options , username) => new Promise(async(resolve , reject) => {
     try {
+        log(`Scrappe links of ${username}` , 'info' , 'W.U.I.T')
         var posts = []
         var total_progress = 0
         var { url , headers } = await headersCreate(NavInfo , id)
@@ -19,7 +20,7 @@ module.exports = (id , NavInfo , options , username) => new Promise(async(resolv
         total_progress += total
 
         if (options.v) {
-            console.log(`[${username}][WH_TAGGED] new : ${total} | total : ${total_progress}`)
+            log(`${username}: ${total} new posts where user is tagged` ,'progress','W.U.I.T')
         }
         egdes.forEach(element => {
             posts.push(element)
@@ -41,7 +42,7 @@ module.exports = (id , NavInfo , options , username) => new Promise(async(resolv
 
             total_progress += total
             if (options.v && has_next_page != false) {
-                console.log(`[${username}][WH_TAGGED] new : ${total} | total : ${total_progress}`)
+                log(`${username}: ${total} new posts where user is tagged` ,'progress','W.U.I.T')
             }
 
             egdes.forEach(element => {
@@ -50,7 +51,7 @@ module.exports = (id , NavInfo , options , username) => new Promise(async(resolv
             if (options.hasOwnProperty('break')) {
                 if (compteur == options.break.eachXRequest) {
                     if (options.v) {
-                        console.log(`Taking a break a ${options.break.time}ms`)
+                        log(`Taking a break a ${options.break.time}ms`,'pause','W.U.I.T')
                     }
                     await sleep(options.break.time)
                     compteur = 0
@@ -66,7 +67,6 @@ module.exports = (id , NavInfo , options , username) => new Promise(async(resolv
     resolve(posts)
 }) 
 got = (headers , url) => new Promise((resolve , reject ) => {
-    console.log(url)
     axios({url : url , headers : headers , methode : 'get'})
     .then((results) => {
         resolve(results.data)

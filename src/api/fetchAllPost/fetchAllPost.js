@@ -3,7 +3,7 @@ const axios = require('axios')
 const config = require('../../../stuff/config')
 const querystring = require('querystring')
 const fetchProfile = require('../fetchProfile/query')
-
+const log = require('../primary/logMessage')
 var createHeaders = (end_cursor , NavInfo , id) => new Promise((resolve , reject ) => {
     url_variables = { id : id , first : 12 , after : end_cursor}
     const query_params = {
@@ -40,7 +40,6 @@ fetchAllPosts = (id , end_cursor , has_next_page , options , username , NavInfo 
         try {
             var response = await axios.get(url , headers)
             if (response.data.status != 'ok' || response.data.data.user.edge_owner_to_timeline_media.edges.length == 0) {
-                console.log(`[${username}][POST] Can't retrieve others posts`)
                 throw new Error(JSON.stringify({ type : 'reponse' , url : url , headers : headers , content : response.data}))
             }
             for ( i in response.data.data.user.edge_owner_to_timeline_media.edges) {
@@ -49,20 +48,19 @@ fetchAllPosts = (id , end_cursor , has_next_page , options , username , NavInfo 
             new_posts_length = response.data.data.user.edge_owner_to_timeline_media.edges.length
             number_of_posts+=new_posts_length
             if (options.v) {
-                console.log(`[${username}][POST] ${number_of_posts}/${total_count} posts`)
+                log(`${username}: ${number_of_posts}/${total_count} posts` , 'progress' ,'posts')
             }
             has_next_page =  response.data.data.user.edge_owner_to_timeline_media.page_info.has_next_page
             end_cursor = response.data.data.user.edge_owner_to_timeline_media.page_info.end_cursor
 
         } catch(e) {
-            console.log(`[${username}][POST] Can't query api`)
             reject(e)
             break;
         }
         if (options.hasOwnProperty('break')) {
             if (compteur == options.break.eachXRequest) {
                 if (options.v) {
-                    console.log(`Taking a break a ${options.break.time}ms`)
+                    log(`Taking a break a ${options.break.time}ms` , 'pause' ,'posts')
                 }
                 await sleep(options.break.time)
                 compteur = 1
@@ -79,9 +77,9 @@ module.exports = (id , NavInfo , options, info=null) => new Promise(async(resolv
             const end_cursor = info.end_cursor,
                     has_next_page = info.has_next_page ,
                     username = info.username,
-                    total_count = info.total_count
+                    total_count = info.total_count,
                     yet_collected_number = info.yet_collected_number
-            if (options.v) { console.log(`[${username}][POST] ${yet_collected_number}/${total_count} posts`) }
+            if (options.v) { log(`${username}: ${yet_collected_number}/${total_count} posts` , 'progress' , 'posts') }
             var posts = await fetchAllPosts(id , end_cursor , has_next_page , options , username , NavInfo , total_count , yet_collected_number)
                 
         } else {
@@ -92,7 +90,7 @@ module.exports = (id , NavInfo , options, info=null) => new Promise(async(resolv
                 username = profile.username,
                 total_count = media.count,
                 yet_collected_number = media.edges.length
-            if (options.v) { console.log(`[${username}][POST] ${yet_collected_number}/${total_count} posts`) }
+            if (options.v) { log(`${username}: ${yet_collected_number}/${total_count} posts`,'progress','posts') }
             var posts = await fetchAllPosts(id , end_cursor , has_next_page , options , username , NavInfo , total_count , yet_collected_number)
         }
         resolve(posts)

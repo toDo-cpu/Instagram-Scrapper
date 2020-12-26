@@ -3,11 +3,9 @@ const querystring = require('querystring')
 const config = require('../../../stuff/config')
 const crypto = require('crypto')
 const child_process = require('child_process')
-
+const log = require('../primary/logMessage')
 module.exports = (id , navigationInfo , chunk , options) => new Promise(async(resolve , reject) => {  
-    if (options.v) {
-        console.log(`\x1b[35m[LAZARE] Scrappe followers of ${options.target}\x1b[0m`)
-    }
+    log(`Scrappe followers of ${options.target}`,'info','followers')
     if (options.hasOwnProperty('break')) {
         var compteur = 1
         var accountFollowers = []
@@ -16,7 +14,7 @@ module.exports = (id , navigationInfo , chunk , options) => new Promise(async(re
         number_of_followers_obtained = number_of_followers_obtained +  followers.length
         accountFollowers.push(followers)
         if (options.v) {
-            console.log(`\x1b[32m[LAZARE][${options.target}] ${followers.length} | total : ${number_of_followers_obtained}/${total_followers}\x1b[0m`)
+            log(`${options.target}: ${number_of_followers_obtained}/${total_followers}` ,'progress','followers')
         }
         if (options.hasOwnProperty('post_chunk') && options.post_chunk == true) {
             post_chunk(followers , uid , options)
@@ -32,14 +30,14 @@ module.exports = (id , navigationInfo , chunk , options) => new Promise(async(re
             number_of_followers_obtained = number_of_followers_obtained +  followers.length
             accountFollowers.push(followers)
             if (options.v) {
-                console.log(`\x1b[32m[LAZARE][${options.target}] ${followers.length} | total : ${number_of_followers_obtained}/${total_followers}\x1b[0m`)
+                log(`${options.target}: ${number_of_followers_obtained}/${total_followers}` ,'progress','followers')
             }
             if (options && options.hasOwnProperty('post_chunk') && options.post_chunk == true) {
                 post_chunk(followers , uid , options)
             }
             if (compteur == options.break.eachXRequest) {
                 if (options.v) {
-                    console.log(`\x1b[33m[LAZARE] Taking a break a ${options.break.time}ms \x1b[0m`)
+                    log(`Taking a break a ${options.break.time}ms`,'pause','followers')
                 }
                 await sleep(options.break.time)
                 compteur = 1
@@ -57,7 +55,7 @@ module.exports = (id , navigationInfo , chunk , options) => new Promise(async(re
         number_of_followers_obtained = number_of_followers_obtained +  followers.length
         accountFollowers.push(followers)
         if (options.v) {
-            console.log(`\x1b[32m[LAZARE][${options.target}] ${followers.length} | total : ${number_of_followers_obtained}/${total_followers}\x1b[0m`)
+            log(`${options.target}: ${number_of_followers_obtained}/${total_followers}` ,'progress','followers')
         }
         if (options && options.hasOwnProperty('post_chunk') && options.post_chunk == true) {
             post_chunk(followers , uid , options)
@@ -72,7 +70,7 @@ module.exports = (id , navigationInfo , chunk , options) => new Promise(async(re
             number_of_followers_obtained = number_of_followers_obtained +  followers.length
             accountFollowers.push(followers)
             if (options.v) {
-                console.log(`\x1b[32m[LAZARE][${options.target}] ${followers.length} | total : ${number_of_followers_obtained}/${total_followers}\x1b[0m`)
+                log(`${options.target}: ${number_of_followers_obtained}/${total_followers}` ,'progress','followers')
             }
             if (options && options.hasOwnProperty('post_chunk') && options.post_chunk == true) {
                 post_chunk(followers , uid , options)
